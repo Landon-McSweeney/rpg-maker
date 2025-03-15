@@ -5,6 +5,7 @@
 import { LitElement, html, css } from "lit";
 import { DDDSuper } from "@haxtheweb/d-d-d/d-d-d.js";
 import { I18NMixin } from "@haxtheweb/i18n-manager/lib/I18NMixin.js";
+import "@haxtheweb/rpg-character";
 
 /**
  * `rpg-maker`
@@ -20,7 +21,8 @@ export class RpgMaker extends DDDSuper(I18NMixin(LitElement)) {
 
   constructor() {
     super();
-    this.title = "";
+    this.title = "GitHub Contributors";
+    this.contributors = []; // Store contributors here
     this.t = this.t || {};
     this.t = {
       ...this.t,
@@ -33,6 +35,8 @@ export class RpgMaker extends DDDSuper(I18NMixin(LitElement)) {
         "/../",
       locales: ["ar", "es", "hi", "zh"], // Supported languages
     });
+
+    this.fetchContributors();
   }
 
   // Lit reactive properties
@@ -40,6 +44,7 @@ export class RpgMaker extends DDDSuper(I18NMixin(LitElement)) {
     return {
       ...super.properties,
       title: { type: String },
+      contributors: { type: Array },
     };
   }
 
@@ -72,8 +77,18 @@ export class RpgMaker extends DDDSuper(I18NMixin(LitElement)) {
         .slot-content {
           margin-top: var(--ddd-spacing-3);
         }
+        .contributor-card {
+          margin-bottom: 16px;
+        }
       `
     ];
+  }
+
+  // Fetch contributors from GitHub API
+  async fetchContributors() {
+    const response = await fetch(`https://api.github.com/repos/haxtheweb/webcomponents/contributors`);
+    const data = await response.json();
+    this.contributors = data.slice(0, 5); // Limit to 5 contributors for now
   }
 
   // Lit render the HTML
@@ -81,9 +96,24 @@ export class RpgMaker extends DDDSuper(I18NMixin(LitElement)) {
     return html`
       <div class="wrapper">
         <h3><span>${this.t.title}:</span> ${this.title}</h3>
-        <div class="slot-content">
-          <slot></slot>
+        <div class="contributors-list">
+          ${this.contributors.map(contributor => html`
+            <div class="contributor-card">
+              <haxtheweb-rpg-character
+                name="${contributor.login}"
+                seed="${contributor.login}"
+                class="character-card"
+              >
+                <div class="contributor-info">
+                  <p>Username: ${contributor.login}</p>
+                  <p>Contributions: ${contributor.contributions}</p>
+                  <a href="${contributor.html_url}" target="_blank">GitHub Profile</a>
+                </div>
+              </haxtheweb-rpg-character>
+            </div>
+          `)}
         </div>
+        <slot></slot>
       </div>
     `;
   }
